@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os, platform
 from tkinter import *
 from tkinter import filedialog, messagebox
@@ -5,8 +7,6 @@ from os import walk
 from tkinter import ttk
 
 global pathconfig
-
-pathconfig = "config.txt"
 
 def get_format(patharxiu):
     #Returns the format of a file, given its path
@@ -189,11 +189,90 @@ def eraseing(format_to_erase):
         line = e.strip()
         if line[0:line.find("#")] == format_to_erase:
             path = line[line.find("#") + 1:]
-    yn = messagebox.askyesno("Delete?", "Are you sure you want stop ordering " + format_to_erase + "files to\n" +  path + "?")
+    yn = messagebox.askyesno("Delete?", "Are you sure you want stop ordering " + format_to_erase + " files to" +  path + " ?")
     if yn:
         erase_format(format_to_erase)
+        
+def create_config_file(pathconfig, urlMusic, urlVideos, urlImages, UrlDocs):
+    #Given the location of config.txt and the 4 main user libraries, creates the config.txt
+    #file with some filetypes directed to the 4 main user libraries
+    filee = open(pathconfig, 'a')
+    filee.write(".mp3#" + urlMusic)
+    filee.write(".flac#" + urlMusic)
+    filee.write(".ogg#" + urlMusic)
+    filee.write(".wav#" + urlMusic)
+    filee.write(".aac#" + urlMusic)
+
+    filee.write(".avi#" + urlVideos)
+    filee.write(".mp4#" + urlVideos)
+    filee.write(".wmv#" + urlVideos)
+    filee.write(".mkv#" + urlVideos)
+
+    filee.write(".jpg#" + urlImages)
+    filee.write(".jpeg#" + urlImages)
+    filee.write(".gif#" + urlImages)
+    filee.write(".png#" + urlImages)
+    filee.write(".bmp#" + urlImages)
+    filee.write(".tiff#" + urlImages)
+
+    filee.write(".docx#" + UrlDocs)
+    filee.write(".odt#" + UrlDocs)
+    filee.write(".pdf#" + UrlDocs)
+    filee.write(".doc#" + UrlDocs)
+    filee.write(".xls#" + UrlDocs)
+    filee.write(".xlxs#" + UrlDocs)
+    filee.write(".ppt#" + UrlDocs)
+    filee.write(".pptx#" + UrlDocs)
+    filee.write(".ods#" + UrlDocs)
+    filee.write(".odp#" + UrlDocs)
+    
+    filee.close()
+
+def file_exists(urll):
+    return  os.path.isfile(urll)
 
 #MAIN
+
+if(platform.system() == "Darwin"):
+    #MacOSX
+    pathconfig = "/Library/Preferences/config.txt"
+    tunombre = os.getlogin()
+    if(not file_exists(pathconfig)):
+        music = "/Users/" + tunombre +"/Music\n"
+        movies = "/Users/" + tunombre +"/Movies\n"
+        pics = "/Users/" + tunombre +"/Pictures\n"
+        docs = "/Users/" + tunombre +"/Documents\n"
+        create_config_file(pathconfig, music, movies,pics, docs)#path, music, videos, images , docs		
+elif(platform.system() == "Linux"):
+    #Linux
+    tunombre = os.getlogin()
+    pathconfig = "/etc/config.txt"#cambiar a path de config
+    if(not file_exists(pathconfig)):
+        if(os.path.isdir("/home/" + tunombre +"/Música")): #check if spanish
+            tunombre = os.getlogin()
+            music = "/home/" + tunombre +"/Música\n"
+            movies = "/home/" + tunombre +"/Videos\n"
+            pics = "/home/" + tunombre +"/Imagenes\n"
+            docs = "/home/" + tunombre +"/Documents\n"
+            create_config_file(pathconfig, music, movies,pics, docs)
+        elif (os.path.isdir("/home/" + tunombre +"/music")): #check if english
+            tunombre = os.getlogin()
+            music = "/home/" + tunombre +"/Music\n"
+            movies = "/home/" + tunombre +"/Videos\n"
+            pics = "/home/" + tunombre +"/Images\n"
+            docs = "/home/" + tunombre +"/Documents\n"
+            create_config_file(pathconfig, music, movies,pics, docs)
+else:
+    #Windows
+    username = os.getlogin()
+    pathconfig = "C:/Users/" + username + "/Documents/config.txt"#cambiar a path de config
+    if(not file_exists(pathconfig)):
+        music = "C:/Users/" + username +"/Music\n"
+        movies = "C:/Users/" + username +"/Videos\n"
+        pics = "C:/Users/" + username +"/Pictures\n"
+        docs = "C:/Users/" + username +"/Documents\n"
+        create_config_file(pathconfig, music, movies, pics, docs)
+		
 root = Tk()
 root.title("Butler")
 
