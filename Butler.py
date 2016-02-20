@@ -87,15 +87,19 @@ def target_folders_list():
         if target_path not in tfl:
             tfl.append(target_path)
     config.close()
-    return tfl
-
+    return tfl    
+       
 def folder_list():
     #Makes a Radiobutton for every destination folder in config.txt
+    folders = []
     tfl = target_folders_list()
     for i, folder in enumerate(tfl):
-        folder = Radiobutton(Folders_bis, text = folder_nice_name(folder), value = i, indicatoron = 0, padx = w//4.5).grid(row = i, sticky = W+E+N+S)
+        x = Radiobutton(Folders_bis, text = folder_nice_name(folder), value = i, indicatoron = False, padx = w//4.5, command = lambda folder=folder: destination_folder_selected(folder))
+        folders.append(x)
+        x.grid(row = i, sticky = W+E+N+S)
+    return folders
 
-def add_format_destination():
+def add_format_destination(event):
     #Asks the user for a destination path. If no format is given, halts and asks for it
     #If the format is already in config.txt, offers the choice to keep the old one
     #or establish the new destination.
@@ -109,7 +113,7 @@ def add_format_destination():
         for e in config_r:
             linia = e.strip()
             if (linia[0:linia.find("#")] == newformat):
-                res = messagebox.askyesno("Overwrite?","Do you want overwrite your existing path (" + linia[linia.find("#")+1:] + ") for the format: " + linia[0:linia.find("#")], default="no")
+                res = messagebox.askyesno("Overwrite?", "Do you want overwrite your existing path (" + linia[linia.find("#")+1:] + ") for the format: " + linia[0:linia.find("#")], default="no")
                 if (res):
                     creada=True
                     config_a.close()
@@ -130,11 +134,27 @@ def add_format_destination():
     config_a.close()
     folder_list()
     new_format_type.set("")
+    Formats.update_idletasks()
 
 def myfunction(event):
     #Does something
     canvas.configure(scrollregion=canvas.bbox("all"),width=w//2,height=3*h//4)
-    
+
+def destination_folder_selected(path):
+    path_to_label(path)
+    formats_scroll(formatstofolder(path))
+    Formats.update_idletasks()
+
+def path_to_label(pathh):
+    dirpathvar.set(pathh)
+
+def formats_scroll(lista):
+    mylist.delete(0, END)
+    for line in lista:
+        mylist.insert(END,str(line))
+    mylist.pack( side = RIGHT, fill = "both", expand=True)
+
+
 #MAIN
 root = Tk()
 root.title("Butler")
@@ -163,36 +183,35 @@ Formats.pack(side = RIGHT, fill="both", expand=True)
 AddFolder.pack(side = LEFT, fill="both", expand=True)
 AddFiles.pack(side = RIGHT, fill="both", expand=True)
 
+#Top Right
+dirpathvar = StringVar()
+dirpathvar.set("Directory....")
+pathlabel = Label(Formats, textvariable=dirpathvar).pack(fill = "y")
+scrollformats = Scrollbar(Formats)
+scrollformats.pack(side = RIGHT, fill="both")
+mylist = Listbox(Formats, yscrollcommand = scrollformats.set)
+scrollformats.config(command = mylist.yview)
 
 #Top Left
 canvas = Canvas(Folders)
 Folders_bis = Frame(canvas)
-folderscrollbar = Scrollbar(Folders,orient="vertical",command=canvas.yview)
+folderscrollbar = Scrollbar(Folders, orient = "vertical",command=canvas.yview)
 canvas.configure(yscrollcommand = folderscrollbar.set)
-folderscrollbar.grid(row=1,sticky = E+N+S)
-canvas.grid(row=1)
+folderscrollbar.grid(row = 1, sticky = E+N+S)
+canvas.grid(row = 1)
 
 ask_for_new_format = Label(Folders, text = 'Insert format for new destination folder below:').grid(row = 2, column = 0, sticky = W+E+N+S)
 new_format_type = StringVar()
 new_format = ttk.Entry(Folders, width=7, textvariable=new_format_type)
-new_format.grid(column=0, row=3, sticky=(W, E))
+new_format.grid(column = 0, row = 3, sticky = (W, E))
 new_format.bind('<Return>', add_format_destination)
 
 Button(Folders, text = 'Add new destination folder', command = add_format_destination).grid(row = 4, column = 0, sticky = W+E+N+S)
 
 canvas.create_window((0,0),window=Folders_bis,anchor='nw')
 Folders_bis.bind("<Configure>",myfunction)
-folder_list()
+list_of_folders = folder_list()
 
-
-#Top Right
-scrollformats = Scrollbar(Formats)
-scrollformats.pack(side = RIGHT, fill="both")
-mylist = Listbox(Formats, yscrollcommand = scrollformats.set)
-for line in range(100):
-    mylist.insert(END, "This is line number " + str(line))
-mylist.pack( side = RIGHT, fill = "x" )
-scrollformats.config( command = mylist.yview )
 
 #Bottom Right
 Add_Folder = Button(AddFolder, text="Add Folder", command=button_addfolder)
