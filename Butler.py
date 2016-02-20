@@ -5,6 +5,7 @@ from os import walk
 from tkinter import ttk
 
 global pathconfig
+
 pathconfig = "config.txt"
 
 def get_format(patharxiu):
@@ -68,7 +69,7 @@ def formatstofolder(folderpath):
     config = open(pathconfig,'r')
     for e in config:
         linia = e.strip()
-        if folderpath in linia:
+        if folderpath == linia[linia.find("#")+1:]:
             formats.append(linia[0:linia.find("#")])
     config.close()
     return formats
@@ -95,17 +96,23 @@ def folder_list():
     tfl = target_folders_list()
     for i, folder in enumerate(tfl):
         x = Radiobutton(Folders_bis, text = folder_nice_name(folder), value = i, indicatoron = False, padx = w//4.5, command = lambda folder=folder: destination_folder_selected(folder))
+        x.select()
         folders.append(x)
         x.grid(row = i, sticky = W+E+N+S)
+    x.deselect()
     return folders
 
-def add_format_destination(event):
+def add_format_destination(*event):
     #Asks the user for a destination path. If no format is given, halts and asks for it
     #If the format is already in config.txt, offers the choice to keep the old one
     #or establish the new destination.
+    newformat = new_format_type.get()
+    if len(newformat) == 0:
+        return 0
+    if newformat[0] != ".":
+        newformat = "." + newformat
     dest_path = filedialog.askdirectory(title = "Choose destination path")
     config_a = open(pathconfig, 'a')
-    newformat = new_format_type.get()
     creada = False
     if len(newformat) != 0:
         config_r = open(pathconfig,'r')
@@ -134,26 +141,57 @@ def add_format_destination(event):
     config_a.close()
     folder_list()
     new_format_type.set("")
-    Formats.update_idletasks()
 
 def myfunction(event):
     #Does something
     canvas.configure(scrollregion=canvas.bbox("all"),width=w//2,height=3*h//4)
 
 def destination_folder_selected(path):
+    #Once a folder from the folders list has been selected, calls these three functions
+    global displayed_formats
+    displayed_formats = formatstofolder(path)
     path_to_label(path)
-    formats_scroll(formatstofolder(path))
-    Formats.update_idletasks()
+    formats_scroll(displayed_formats)
 
 def path_to_label(pathh):
+    #Creates the appropiate text for the label on top of the filetypes
     dirpathvar.set(pathh)
 
 def formats_scroll(lista):
-    mylist.delete(0, END)
+    #Takes a Listbox and inserts an element for each of a given list of filetypes
+    formats_list.delete(0, END)
     for line in lista:
-        mylist.insert(END,str(line))
-    mylist.pack( side = RIGHT, fill = "both", expand=True)
+        formats_list.insert(END,str(line))
+    formats_list.pack( side = RIGHT, fill = "both", expand=True)
 
+def erase_format(format_to_erase):
+    #Given a format type, erases said type and its destination folder from config.txt
+    f = open(pathconfig, 'r')
+    lines = f.readlines()
+    f.close()
+    f = open(pathconfig, 'w')
+    for line in lines:
+        if line[0:line.find("#")] != format_to_erase:
+            f.write(line)
+    f.close()
+
+def scrollbar_select(event):
+    #Sets a global variable with the index of the current selected element of the filetypes
+    #scrolling bar
+    i = event.widget
+    global selected_format_index
+    selected_format_index = int(i.curselection()[0])
+    
+def eraseing(format_to_erase):
+    #Makes sure the user wants to delete a format and its destination folder
+    f = open(pathconfig, 'r')
+    for e in f:
+        line = e.strip()
+        if line[0:line.find("#")] == format_to_erase:
+            path = line[line.find("#") + 1:]
+    yn = messagebox.askyesno("Delete?", "Are you sure you want stop ordering " + format_to_erase + "files to\n" +  path + "?")
+    if yn:
+        erase_format(format_to_erase)
 
 #MAIN
 root = Tk()
@@ -189,8 +227,13 @@ dirpathvar.set("Directory....")
 pathlabel = Label(Formats, textvariable=dirpathvar).pack(fill = "y")
 scrollformats = Scrollbar(Formats)
 scrollformats.pack(side = RIGHT, fill="both")
-mylist = Listbox(Formats, yscrollcommand = scrollformats.set)
-scrollformats.config(command = mylist.yview)
+
+formats_list = Listbox(Formats, yscrollcommand = scrollformats.set, exportselection = 0)
+scrollformats.config(command = formats_list.yview)
+
+espaiador_perque_quadri = Label(Formats, text="___________________________________________________").pack(fill = "y")
+formats_list.bind('<<ListboxSelect>>', scrollbar_select)
+erase_format_button = Button(Formats, text="Erase format", justify = "right", command = lambda: eraseing(displayed_formats[selected_format_index])).pack()
 
 #Top Left
 canvas = Canvas(Folders)
@@ -201,17 +244,16 @@ folderscrollbar.grid(row = 1, sticky = E+N+S)
 canvas.grid(row = 1)
 
 ask_for_new_format = Label(Folders, text = 'Insert format for new destination folder below:').grid(row = 2, column = 0, sticky = W+E+N+S)
+new_dest_folder = Button(Folders, text = 'Add new destination folder', command = add_format_destination).grid(row = 4, column = 0, sticky = W+E+N+S)
+
 new_format_type = StringVar()
 new_format = ttk.Entry(Folders, width=7, textvariable=new_format_type)
 new_format.grid(column = 0, row = 3, sticky = (W, E))
 new_format.bind('<Return>', add_format_destination)
 
-Button(Folders, text = 'Add new destination folder', command = add_format_destination).grid(row = 4, column = 0, sticky = W+E+N+S)
-
 canvas.create_window((0,0),window=Folders_bis,anchor='nw')
 Folders_bis.bind("<Configure>",myfunction)
 list_of_folders = folder_list()
-
 
 #Bottom Right
 Add_Folder = Button(AddFolder, text="Add Folder", command=button_addfolder)
