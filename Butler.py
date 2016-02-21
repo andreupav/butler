@@ -255,8 +255,8 @@ def file_exists(urll):
 
 if(platform.system() == "Darwin"):
     #MacOSX
-    pathconfig = "/Library/Preferences/config.txt"
     tunombre = os.getlogin()
+    pathconfig = "/Users/" + tunombre + "/Documents/config.txt"
     if(not file_exists(pathconfig)):
         music = "/Users/" + tunombre +"/Music\n"
         movies = "/Users/" + tunombre +"/Movies\n"
@@ -359,6 +359,7 @@ new_format.bind('<Return>', add_format_destination)
 canvas.create_window((0,0),window=Folders_bis,anchor='nw')
 Folders_bis.bind("<Configure>",myfunction)
 
+
 def update():
     #Updates every relevant tkinter element
     list_of_folders = folder_list()
@@ -391,5 +392,5 @@ Add_Folder.pack(fill="both", expand=True)
 #Bottom Left
 Add_Files = Button(AddFiles, text="Add Files", command=button_addfiles)
 Add_Files.pack(fill="both", expand=True)
-    
+
 root.mainloop()
