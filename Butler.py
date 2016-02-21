@@ -5,6 +5,7 @@ from tkinter import *
 from tkinter import filedialog, messagebox
 from os import walk
 from tkinter import ttk
+from time import sleep
 
 global pathconfig
 
@@ -112,6 +113,8 @@ def add_format_destination(*event):
     if newformat[0] != ".":
         newformat = "." + newformat
     dest_path = filedialog.askdirectory(title = "Choose destination path")
+    if not dest_path:
+        return
     config_a = open(pathconfig, 'a')
     creada = False
     if len(newformat) != 0:
@@ -189,9 +192,10 @@ def eraseing(format_to_erase):
         line = e.strip()
         if line[0:line.find("#")] == format_to_erase:
             path = line[line.find("#") + 1:]
-    yn = messagebox.askyesno("Delete?", "Are you sure you want stop ordering " + format_to_erase + " files to" +  path + " ?")
+    yn = messagebox.askyesno("Delete?", "Are you sure you want stop ordering " + format_to_erase + " files to " +  path + " ?")
     if yn:
         erase_format(format_to_erase)
+    
         
 def create_config_file(pathconfig, urlMusic, urlVideos, urlImages, UrlDocs):
     #Given the location of config.txt and the 4 main user libraries, creates the config.txt
@@ -230,7 +234,7 @@ def create_config_file(pathconfig, urlMusic, urlVideos, urlImages, UrlDocs):
 
 def file_exists(urll):
     return  os.path.isfile(urll)
-
+    
 #MAIN
 
 if(platform.system() == "Darwin"):
@@ -304,19 +308,21 @@ AddFiles.pack(side = RIGHT, fill="both", expand=True)
 dirpathvar = StringVar()
 dirpathvar.set("Directory....")
 pathlabel = Label(Formats, textvariable=dirpathvar).pack(fill = "y")
+
 scrollformats = Scrollbar(Formats)
 scrollformats.pack(side = RIGHT, fill="both")
 
 formats_list = Listbox(Formats, yscrollcommand = scrollformats.set, exportselection = 0)
 scrollformats.config(command = formats_list.yview)
 
+erase_format_button = Button(Formats, text="Erase format", justify = "right", command = lambda: eraseing(displayed_formats[selected_format_index])).pack()
 espaiador_perque_quadri = Label(Formats, text="___________________________________________________").pack(fill = "y")
 formats_list.bind('<<ListboxSelect>>', scrollbar_select)
-erase_format_button = Button(Formats, text="Erase format", justify = "right", command = lambda: eraseing(displayed_formats[selected_format_index])).pack()
 
 #Top Left
 canvas = Canvas(Folders)
 Folders_bis = Frame(canvas)
+
 folderscrollbar = Scrollbar(Folders, orient = "vertical",command=canvas.yview)
 canvas.configure(yscrollcommand = folderscrollbar.set)
 folderscrollbar.grid(row = 1, sticky = E+N+S)
@@ -332,6 +338,7 @@ new_format.bind('<Return>', add_format_destination)
 
 canvas.create_window((0,0),window=Folders_bis,anchor='nw')
 Folders_bis.bind("<Configure>",myfunction)
+
 list_of_folders = folder_list()
 
 #Bottom Right
@@ -342,4 +349,12 @@ Add_Folder.pack(fill="both", expand=True)
 Add_Files = Button(AddFiles, text="Add Files", command=button_addfiles)
 Add_Files.pack(fill="both", expand=True)
 
+def update():
+    #Updates every relevant tkinter element
+    for folder in list_of_folders:
+        folder.update()
+    folderscrollbar.update()
+    formats_list.update()
+    scrollformats.update()
+    
 root.mainloop()
