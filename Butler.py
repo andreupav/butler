@@ -8,6 +8,7 @@ from tkinter import ttk
 from time import sleep
 
 global pathconfig
+global list_of_folders
 
 def get_format(patharxiu):
     #Returns the format of a file, given its path
@@ -132,7 +133,6 @@ def add_format_destination(*event):
             messagebox.showinfo(title = "Choose a file format for this folder", message = "Choose a file format for this folder")
     config_a.close()
     folder_list()
-    
     new_format_type.set("")
     update()
 
@@ -210,8 +210,8 @@ def eraseing(selected_format_index):
     if yn:
         erase_format(format_to_erase)
         target_folders_list()
-    Folders_bis.update_idletasks()
-    update()
+        Folders_bis.update_idletasks()
+        update()
 
 def create_config_file(pathconfig, urlMusic, urlVideos, urlImages, UrlDocs):
     #Given the location of config.txt and the 4 main user libraries, creates the config.txt
@@ -341,8 +341,9 @@ formats_list.bind('<<ListboxSelect>>', scrollbar_select)
 canvas = Canvas(Folders)
 Folders_bis = Frame(canvas)
 
-folderscrollbar = Scrollbar(Folders, orient = "vertical",command=canvas.yview)
 list_of_folders = folder_list()
+
+folderscrollbar = Scrollbar(Folders, orient = "vertical",command=canvas.yview)
 
 canvas.configure(yscrollcommand = folderscrollbar.set)
 folderscrollbar.grid(row = 1, sticky = E+N+S)
@@ -359,26 +360,17 @@ new_format.bind('<Return>', add_format_destination)
 canvas.create_window((0,0),window=Folders_bis,anchor='nw')
 Folders_bis.bind("<Configure>",myfunction)
 
-
 def update():
-    #Updates every relevant tkinter element
+    #Updates every relevant tkinter elemens
     list_of_folders = folder_list()
     try:
         list_of_folders[selected_folder_index].invoke()
-    except NameError:
-        try:
-            list_of_folders[0].invoke()
-            print("e")
-        except IndexError:
-            pass
+    except:
+        pass
     Folders_bis.update_idletasks()
     target_folders_list()
     for folder in list_of_folders:
         folder.update()
-    folderscrollbar.update()
-    Folders_bis.update_idletasks()
-    Folders.update()
-    canvas.update()
     Folders_bis.update()
     formats_list.update()
     scrollformats.update()
@@ -392,5 +384,5 @@ Add_Folder.pack(fill="both", expand=True)
 #Bottom Left
 Add_Files = Button(AddFiles, text="Add Files", command=button_addfiles)
 Add_Files.pack(fill="both", expand=True)
-
+    
 root.mainloop()
