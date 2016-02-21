@@ -81,6 +81,7 @@ def folder_nice_name(folderpath):
 
 def target_folders_list():
     #Returns a list of all the destination folders in config.txt
+    global tfl
     tfl = []
     config = open(pathconfig,'r')
     for e in config:
@@ -90,18 +91,6 @@ def target_folders_list():
             tfl.append(target_path)
     config.close()
     return tfl    
-       
-def folder_list():
-    #Makes a Radiobutton for every destination folder in config.txt
-    folders = []
-    tfl = target_folders_list()
-    for i, folder in enumerate(tfl):
-        x = Radiobutton(Folders_bis, text = folder_nice_name(folder), value = i, indicatoron = False, padx = w//4.5, command = lambda folder=folder: destination_folder_selected(folder))
-        x.select()
-        folders.append(x)
-        x.grid(row = i, sticky = W+E+N+S)
-    x.deselect()
-    return folders
 
 def add_format_destination(*event):
     #Asks the user for a destination path. If no format is given, halts and asks for it
@@ -143,7 +132,9 @@ def add_format_destination(*event):
             messagebox.showinfo(title = "Choose a file format for this folder", message = "Choose a file format for this folder")
     config_a.close()
     folder_list()
+    
     new_format_type.set("")
+    update()
 
 def myfunction(event):
     #Does something
@@ -151,10 +142,28 @@ def myfunction(event):
 
 def destination_folder_selected(path):
     #Once a folder from the folders list has been selected, calls these three functions
+    global selected_folder_index
+    for i in range(len(tfl)):
+        if tfl[i] == path:
+            selected_folder_index = i
+            break
     global displayed_formats
     displayed_formats = formatstofolder(path)
     path_to_label(path)
     formats_scroll(displayed_formats)
+    
+def folder_list():
+    #Makes a Radiobutton for every destination folder in config.txt
+    folders = []
+    target_folders_list()
+    for i, folder in enumerate(tfl):
+        x = Radiobutton(Folders_bis, text = folder_nice_name(folder), value = i, indicatoron = False, padx = w//4.5, command = lambda folder=folder: destination_folder_selected(folder))
+        x.select()
+        folders.append(x)
+        x.grid(row = i, sticky = W+E+N+S)
+        x.deselect()
+        Folders_bis.update_idletasks()
+    return folders
 
 def path_to_label(pathh):
     #Creates the appropiate text for the label on top of the filetypes
@@ -185,18 +194,25 @@ def scrollbar_select(event):
     global selected_format_index
     selected_format_index = int(i.curselection()[0])
     
-def eraseing(format_to_erase):
+def eraseing(selected_format_index):
     #Makes sure the user wants to delete a format and its destination folder
+    try:
+        format_to_erase = displayed_formats[selected_format_index]
+    except TypeError:
+        return
     f = open(pathconfig, 'r')
+    path = ""
     for e in f:
         line = e.strip()
-        if line[0:line.find("#")] == format_to_erase:
+        if format_to_erase == line[0:line.find("#")]:
             path = line[line.find("#") + 1:]
     yn = messagebox.askyesno("Delete?", "Are you sure you want stop ordering " + format_to_erase + " files to " +  path + " ?")
     if yn:
         erase_format(format_to_erase)
-    
-        
+        target_folders_list()
+    Folders_bis.update_idletasks()
+    update()
+
 def create_config_file(pathconfig, urlMusic, urlVideos, urlImages, UrlDocs):
     #Given the location of config.txt and the 4 main user libraries, creates the config.txt
     #file with some filetypes directed to the 4 main user libraries
@@ -250,7 +266,7 @@ if(platform.system() == "Darwin"):
 elif(platform.system() == "Linux"):
     #Linux
     tunombre = os.getlogin()
-    pathconfig = "/etc/config.txt"#cambiar a path de config
+    pathconfig = "/home/" + tunombre +"/Software/config.txt" #cambiar a path de config
     if(not file_exists(pathconfig)):
         if(os.path.isdir("/home/" + tunombre +"/Música")): #check if spanish
             tunombre = os.getlogin()
@@ -314,8 +330,10 @@ scrollformats.pack(side = RIGHT, fill="both")
 
 formats_list = Listbox(Formats, yscrollcommand = scrollformats.set, exportselection = 0)
 scrollformats.config(command = formats_list.yview)
-
-erase_format_button = Button(Formats, text="Erase format", justify = "right", command = lambda: eraseing(displayed_formats[selected_format_index])).pack()
+try:
+    erase_format_button = Button(Formats, text="Erase format", justify = "right", command = lambda: eraseing(selected_format_index)).pack()
+except NameError:
+    pass
 espaiador_perque_quadri = Label(Formats, text="___________________________________________________").pack(fill = "y")
 formats_list.bind('<<ListboxSelect>>', scrollbar_select)
 
@@ -324,6 +342,8 @@ canvas = Canvas(Folders)
 Folders_bis = Frame(canvas)
 
 folderscrollbar = Scrollbar(Folders, orient = "vertical",command=canvas.yview)
+list_of_folders = folder_list()
+
 canvas.configure(yscrollcommand = folderscrollbar.set)
 folderscrollbar.grid(row = 1, sticky = E+N+S)
 canvas.grid(row = 1)
@@ -339,7 +359,30 @@ new_format.bind('<Return>', add_format_destination)
 canvas.create_window((0,0),window=Folders_bis,anchor='nw')
 Folders_bis.bind("<Configure>",myfunction)
 
-list_of_folders = folder_list()
+def update():
+    #Updates every relevant tkinter element
+    list_of_folders = folder_list()
+    try:
+        list_of_folders[selected_folder_index].invoke()
+    except NameError:
+        try:
+            list_of_folders[0].invoke()
+            print("e")
+        except IndexError:
+            pass
+    Folders_bis.update_idletasks()
+    target_folders_list()
+    for folder in list_of_folders:
+        folder.update()
+    folderscrollbar.update()
+    Folders_bis.update_idletasks()
+    Folders.update()
+    canvas.update()
+    Folders_bis.update()
+    formats_list.update()
+    scrollformats.update()
+    root.update()
+    return
 
 #Bottom Right
 Add_Folder = Button(AddFolder, text="Add Folder", command=button_addfolder)
@@ -348,13 +391,5 @@ Add_Folder.pack(fill="both", expand=True)
 #Bottom Left
 Add_Files = Button(AddFiles, text="Add Files", command=button_addfiles)
 Add_Files.pack(fill="both", expand=True)
-
-def update():
-    #Updates every relevant tkinter element
-    for folder in list_of_folders:
-        folder.update()
-    folderscrollbar.update()
-    formats_list.update()
-    scrollformats.update()
     
 root.mainloop()
